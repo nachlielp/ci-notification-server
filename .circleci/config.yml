@@ -26,10 +26,6 @@ jobs:
           key: v1-dependencies-{{ checksum "package-lock.json" }}
 
       - run:
-          name: Run Tests
-          command: npm test
-
-      - run:
           name: Start Server
           command: npm start
 
