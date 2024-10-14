@@ -13,15 +13,12 @@ const app = express();
 
 app.use(cors());
 
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-  })
-);
-
 app.use(bodyParser.json());
-app.get("/", authenticateRequest, (req, res) => {
-  res.send("Hello World");
+app.get("/api/test-not-verified", (req, res) => {
+  res.send("Hello World - You are not authenticated");
+});
+app.get("/api/test-varify", authenticateRequest, (req, res) => {
+  res.send("Hello World - You are authenticated");
 });
 
 app.post("/api/login", async (req, res) => {
