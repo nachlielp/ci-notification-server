@@ -9,8 +9,6 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const authenticateRequest = async (req, res, next) => {
-  // Parse the cookie string to extract the authToken
-  //issue with postman
   const cookieString = req.headers.cookie || "";
   const cookies = cookieString.split("; ").reduce((acc, cookie) => {
     const [name, value] = cookie.split("=");
@@ -52,3 +50,54 @@ export async function login(email, password) {
   }
   return null;
 }
+
+export const getEventById = async (eventId) => {
+  try {
+    const { data, error } = await supabase
+      .from("ci_events")
+      .select("*")
+      .eq("id", eventId)
+      .single();
+
+    return data;
+  } catch (error) {
+    console.error("Error getting event by id:", error);
+  }
+};
+
+export const getListOfSubscribersByTeacherIds = async (teacherIds) => {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("user_id, push_notification_tokens, subscriptions");
+
+    const overlap = data.filter((user) => {
+      return user.subscriptions.some((subscription) =>
+        teacherIds.includes(subscription)
+      );
+    });
+
+    if (error) {
+      throw error;
+    }
+    console.log("overlap: ", overlap);
+    const tokenObjs = overlap
+      .map((user) => {
+        return {
+          push_notification_tokens: user.push_notification_tokens,
+        };
+      })
+      .flat();
+
+    const tokens = tokenObjs
+      .map((tokenObj) => {
+        return tokenObj.push_notification_tokens.map((token) => token);
+      })
+      .flat()
+      .map((token) => token.token);
+
+    return tokens;
+  } catch (error) {
+    console.error("Error getting list of subscribers by teacher ids:", error);
+  }
+};
