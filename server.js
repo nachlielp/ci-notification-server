@@ -3,8 +3,6 @@ import express from "express";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import cors from "cors";
-import admin from "./firebase.js";
-import cron from "node-cron";
 import { authenticateRequest, login } from "./supabase.client.js";
 import { sendToAllSubscribers } from "./notifications.js";
 dotenv.config();

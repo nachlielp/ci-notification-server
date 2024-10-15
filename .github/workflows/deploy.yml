@@ -21,6 +21,8 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.CI_SERVER_USER }}@${{ secrets.CI_SERVER_IP }} << 'EOF'
             cd cii-notification-server
+            git reset --hard HEAD
+            git clean -fd
             git pull origin main
             docker ps -q --filter "ancestor=ci-noti:1.0" | xargs -r docker stop
             docker ps -a -q --filter "ancestor=ci-noti:1.0" | xargs -r docker rm
