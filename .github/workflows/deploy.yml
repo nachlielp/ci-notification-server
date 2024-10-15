@@ -20,10 +20,10 @@ jobs:
       - name: Deploy to DigitalOcean
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.CI_SERVER_USER }}@${{ secrets.CI_SERVER_IP }} << 'EOF'
-            cd notifications-server
+            cd cii-notification-server
             git pull origin main
-            docker stop notifications-server:1.0 || true
-            docker rm notifications-server:1.0 || true
-            docker build -t notifications-server:1.0 .
-            docker run -d --env-file .env --name notifications-server:1.0 -p 3000:3000 notifications-server:1.0
+            docker stop ci-noti:1.0 || true
+            docker rm ci-noti:1.0 || true
+            docker build -t ci-noti:1.0 .
+            docker run -d --env-file .env -p 3000:3000 ci-noti:1.0
           EOF
