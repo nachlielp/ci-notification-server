@@ -70,6 +70,7 @@ app.post("/api/schedule-notification", authenticateRequest, (req, res) => {
   res.status(200).json({ success: true, message: "Notification scheduled" });
 });
 
-app.listen(3001, () => {
-  console.log("Server started on port 3001");
+const PORT = process.env.LOCAL_PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
 });
