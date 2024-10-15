@@ -130,3 +130,7 @@ dist
 .pnp.*
 
 serviceAccountKey.json
+
+
+key
+key.pub
