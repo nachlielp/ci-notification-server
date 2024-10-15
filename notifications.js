@@ -25,14 +25,25 @@ export async function sendToAllSubscribers({ eventId }) {
     })
     .filter((id) => id !== "NON_EXISTENT");
 
+  const sectionTeacherNames = event.segments
+    .map((segment) => {
+      return segment.teachers;
+    })
+    .flat()
+    .filter((teacher) => teacher.value !== "NON_EXISTENT")
+    .map((teacher) => {
+      return teacher.label;
+    })
+    .join(", ");
+
   const teacherIds = [...multiDayTeacherIds, ...sectionTeacherIds];
-  console.log("teacherIds: ", teacherIds);
+
   const subscribers = await getListOfSubscribersByTeacherIds(teacherIds);
 
   for (const subscriber of subscribers) {
     await sendNotification({
-      title: "התראה על ארוע",
-      body: "התראה על ארוע שלך ביום מסוים",
+      title: event.title,
+      body: `נוצר ארוע חדש עם ${sectionTeacherNames}`,
       token: subscriber,
       eventId,
     });
@@ -44,7 +55,7 @@ export async function sendNotification({ title, body, token, eventId }) {
     data: {
       title: title || "שגיעת התראה",
       body: body || "סליחה, אבל זה נשלח בטעות",
-      url: process.env.DOMAIN_URL + eventId,
+      url: process.env.DOMAIN_URL + "/" + eventId,
     },
     token: token,
   };

@@ -54,35 +54,6 @@ app.post("/api/event-created", authenticateRequest, (req, res) => {
 
   res.status(200).json({ success: true, message: "Notification scheduled" });
 });
-app.post("/api/send-notification", authenticateRequest, (req, res) => {
-  const { eventId } = req.body;
-
-  // console.log("send-notification: ", req.body);
-  // if (!token) {
-  //   return res.status(400).json({ error: "Token is required" });
-  // }
-
-  // const message = {
-  //   data: {
-  //     title: title || "New Notification",
-  //     body: body || "This is a push notification from your server.",
-  //     url: url || "https://example.com/messages",
-  //   },
-  //   token: token,
-  // };
-
-  // admin
-  //   .messaging()
-  //   .send(message)
-  //   .then((response) => {
-  //     console.log("Successfully sent message:", response);
-  //     res.status(200).json({ success: true, response });
-  //   })
-  //   .catch((error) => {
-  //     console.error("Error sending message:", error);
-  //     res.status(500).json({ success: false, error });
-  //   });
-}); // Array to store scheduled notifications
 
 app.post("/api/schedule-notification", authenticateRequest, (req, res) => {
   const { token, title, body, url, scheduleTime, timeZone } = req.body;

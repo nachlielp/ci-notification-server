@@ -80,7 +80,7 @@ export const getListOfSubscribersByTeacherIds = async (teacherIds) => {
     if (error) {
       throw error;
     }
-    console.log("overlap: ", overlap);
+
     const tokenObjs = overlap
       .map((user) => {
         return {
