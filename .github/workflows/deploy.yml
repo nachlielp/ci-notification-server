@@ -22,8 +22,8 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.CI_SERVER_USER }}@${{ secrets.CI_SERVER_IP }} << 'EOF'
             cd cii-notification-server
             git pull origin main
-            docker stop ci-noti:1.0 || true
-            docker rm ci-noti:1.0 || true
+            docker ps -q --filter "ancestor=ci-noti:1.0" | xargs -r docker stop
+            docker ps -a -q --filter "ancestor=ci-noti:1.0" | xargs -r docker rm
             docker build -t ci-noti:1.0 .
             docker run -d --env-file .env -p 3000:3000 ci-noti:1.0
           EOF
