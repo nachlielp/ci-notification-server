@@ -15,8 +15,8 @@ app.use(cors());
 
 app.use(bodyParser.json());
 
-app.get("/api/test-not-verified", (req, res) => {
-  res.send("Hello World - You are not authenticated");
+app.get("/api/test", (req, res) => {
+  res.send("Hello World - we are live!!!");
 });
 app.get("/api/test-varify", authenticateRequest, (req, res) => {
   res.send("Hello World - You are authenticated");
