@@ -40,6 +40,7 @@ export async function sendToAllSubscribers({ eventId }) {
 
   const subscribers = await getListOfSubscribersByTeacherIds(teacherIds);
 
+  //promise all/ batch/ all setteled
   for (const subscriber of subscribers) {
     await sendNotification({
       title: event.title,
