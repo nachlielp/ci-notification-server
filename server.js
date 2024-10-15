@@ -16,7 +16,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.get("/api/test", (req, res) => {
-  res.send("Hello World - we are live!!!");
+  res.send("Hello World - we are live!!");
 });
 app.get("/api/test-varify", authenticateRequest, (req, res) => {
   res.send("Hello World - You are authenticated");
