@@ -1,54 +1,75 @@
 import {
-  getEventById,
   getListOfSubscribersByTeacherIds,
+  getUnnotifiedEvents,
+  setCIEventAsNotified,
 } from "./supabase.client.js";
 
 import admin from "./firebase.js";
 
-export async function sendToAllSubscribers({ eventId }) {
-  const event = await getEventById(eventId);
-  if (!event) {
+export async function sendToAllSubscribers() {
+  const events = await getUnnotifiedEvents();
+  if (!Array.isArray(events)) {
     console.error("Event not found");
     return;
   }
-  const multiDayTeacherIds = event.multi_day_teachers?.filter(
-    (value) => value !== "NON_EXISTENT"
+
+  let notificationResArray = [];
+  const notifiedEvents = new Map();
+
+  for (const event of events) {
+    const multiDayTeacherIds = new Map(
+      (event.multi_day_teachers || [])
+        .filter((value) => value !== "NON_EXISTENT")
+        .map((value) => [value, value]) // Use the value itself as the key
+    );
+
+    const sectionTeacherIds = new Map(
+      event.segments
+        .map((segment) => segment.teachers)
+        .flat()
+        .map((teacher) => teacher.value)
+        .filter((id) => id !== "NON_EXISTENT")
+        .map((value) => [value, value]) // Use the value itself as the key
+    );
+
+    const combinedTeacherIds = new Map([
+      ...multiDayTeacherIds,
+      ...sectionTeacherIds,
+    ]);
+
+    if (combinedTeacherIds.size === 0) {
+      notifiedEvents.set(event.id, true);
+      continue;
+    }
+
+    const subscribers = await getListOfSubscribersByTeacherIds(
+      Array.from(combinedTeacherIds.keys())
+    );
+
+    const results = await Promise.allSettled(
+      subscribers.map((subscriber) => {
+        return sendNotification({
+          title: event.title,
+          body: `ארוע חדש ברשימת עדכונים שלכם`,
+          token: subscriber,
+          eventId: event.id,
+        });
+      })
+    ).then((results) => {
+      return results;
+    });
+
+    notificationResArray = notificationResArray.concat(results);
+    notifiedEvents.set(event.id, true);
+  }
+
+  const setNotifiedResults = await Promise.allSettled(
+    Array.from(notifiedEvents.keys()).map((eventId) => {
+      return setCIEventAsNotified(eventId);
+    })
   );
 
-  const sectionTeacherIds = event.segments
-    .map((segment) => {
-      return segment.teachers;
-    })
-    .flat()
-    .map((teacher) => {
-      return teacher.value;
-    })
-    .filter((id) => id !== "NON_EXISTENT");
-
-  const sectionTeacherNames = event.segments
-    .map((segment) => {
-      return segment.teachers;
-    })
-    .flat()
-    .filter((teacher) => teacher.value !== "NON_EXISTENT")
-    .map((teacher) => {
-      return teacher.label;
-    })
-    .join(", ");
-
-  const teacherIds = [...multiDayTeacherIds, ...sectionTeacherIds];
-
-  const subscribers = await getListOfSubscribersByTeacherIds(teacherIds);
-
-  //promise all/ batch/ all setteled
-  for (const subscriber of subscribers) {
-    await sendNotification({
-      title: event.title,
-      body: `נוצר ארוע חדש עם ${sectionTeacherNames}`,
-      token: subscriber,
-      eventId,
-    });
-  }
+  return { notificationResArray, setNotifiedResults };
 }
 
 export async function sendNotification({ title, body, token, eventId }) {
@@ -61,52 +82,23 @@ export async function sendNotification({ title, body, token, eventId }) {
     token: token,
   };
 
-  admin
+  return admin
     .messaging()
     .send(message)
     .then((response) => {
-      console.log("Successfully sent message:", response);
+      return {
+        destination: token,
+        ci_event_id: eventId,
+        success: true,
+        messageId: response.messageId,
+      };
     })
     .catch((error) => {
-      console.error("Error sending message:", error);
+      return {
+        destination: token,
+        ci_event_id: eventId,
+        success: false,
+        messageId: null,
+      };
     });
-}
-
-async function scheduleNotification({ eventId, scheduleTime, timeZone }) {
-  // const task = cron.schedule(
-  //     scheduleTime,
-  //     () => {
-  //       const message = {
-  //         data: {
-  //           title: title || "התארה על ארוע 💃",
-  //           body: body || "תזכורת על ארוע שלך ביום מסוים",
-  //           url: url || "ci.nachli.com",
-  //         },
-  //         token: token,
-  //       };
-  //       admin
-  //         .messaging()
-  //         .send(message)
-  //         .then((response) => {
-  //           console.log("Successfully sent scheduled message:", response);
-  //         })
-  //         .catch((error) => {
-  //           console.error("Error sending scheduled message:", error);
-  //         });
-  //     },
-  //     {
-  //       scheduled: true,
-  //       timezone: timeZone, // Use the provided time zone
-  //     }
-  //   );
-  //   // Add the task to the list of scheduled notifications
-  //   scheduledNotifications.push({
-  //     token,
-  //     title,
-  //     body,
-  //     url,
-  //     scheduleTime,
-  //     timeZone,
-  //     task,
-  //   });
 }

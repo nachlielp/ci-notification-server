@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-
+import dayjs from "dayjs";
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -8,63 +8,25 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const authenticateRequest = async (req, res, next) => {
-  const cookieString = req.headers.cookie || "";
-  const cookies = cookieString.split("; ").reduce((acc, cookie) => {
-    const [name, value] = cookie.split("=");
-    acc[name] = value;
-    return acc;
-  }, {});
-
-  const token = cookies.authToken;
-
-  if (!token) {
-    return res.status(401).json({ error: "Authorization token is required" });
-  }
-
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data) {
-    return res.status(401).json({ error: "Invalid or expired token" });
-  }
-
-  req.user = data;
-  next();
-};
-
-export async function login(email, password) {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) throw error;
-
-    const accessToken = data.session?.access_token;
-    if (error) {
-      console.error("Error logging in:", error);
-    }
-    return accessToken;
-  } catch (error) {
-    console.error("Error logging in:", error);
-  }
-  return null;
-}
-
-export const getEventById = async (eventId) => {
+export async function getUnnotifiedEvents() {
   try {
     const { data, error } = await supabase
       .from("ci_events")
       .select("*")
-      .eq("id", eventId)
-      .single();
+      .gte("start_date", dayjs().format("YYYY-MM-DD"))
+      .eq("hide", false)
+      .not("is_notified", "is", true);
+
+    if (error) {
+      console.error("Error getting unnotified events:", error);
+      throw error;
+    }
 
     return data;
   } catch (error) {
-    console.error("Error getting event by id:", error);
+    console.error("Error getting unnotified events:", error);
   }
-};
-
+}
 export const getListOfSubscribersByTeacherIds = async (teacherIds) => {
   try {
     const { data, error } = await supabase
@@ -99,5 +61,16 @@ export const getListOfSubscribersByTeacherIds = async (teacherIds) => {
     return tokens;
   } catch (error) {
     console.error("Error getting list of subscribers by teacher ids:", error);
+  }
+};
+
+export const setCIEventAsNotified = async (eventId) => {
+  try {
+    const { data, error } = await supabase
+      .from("ci_events")
+      .update({ is_notified: true })
+      .eq("id", eventId);
+  } catch (error) {
+    console.error("Error setting CI event as notified:", error);
   }
 };
